@@ -36,30 +36,24 @@ object Main {
 
     val cs = coins.toSet
     val m = money
+    val lists = scala.collection.mutable.HashMap[Int, Set[List[Int]]](
+      0 -> Set[List[Int]](),
+      1 -> cs.map(List(_))
+    )
 
-    def genLists(k: Int): Set[List[Int]] = k match {
-      case 0 =>
-        Set[List[Int]]()
-      case 1 =>
-        cs.map(List(_))
-          .filter(_.sum <= m)
-      case _ =>
-        genLists(k - 1)
-          .flatMap(l => cs.map(c => (c :: l).sorted))
-          .filter(_.sum <= m)
+    def getLists(k: Int): Set[List[Int]] = lists.getOrElse(k, genLists(k))
+
+    def genLists(k: Int): Set[List[Int]] = {
+      val newList = getLists(k - 1)
+        .flatMap(l => cs.map(c => (c :: l).sorted))
+        .filter(_.sum <= m)
+      lists.update(k, newList)
+      newList
     }
 
     1.to(m).toSet
-      .flatMap(genLists)
+      .flatMap(getLists)
       .count(_.sum == m)
   }
-
-//  def countChange(money: Int, coins: List[Int]): Int = {
-//    countChange(money, coins, Seq())
-//  }
-//
-//  case class FoundCombination(get: Seq[Int])
-//
-//  def countChange(money: Int, coins: List[Int])(acc: Seq[FoundCombination]): Seq[FoundCombination] = {
 
 }
