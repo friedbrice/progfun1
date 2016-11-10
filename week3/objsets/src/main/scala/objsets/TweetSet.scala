@@ -5,11 +5,10 @@ import TweetReader._
 /**
  * A class to represent tweets.
  */
-class Tweet(val user: String, val text: String, val retweets: Int) {
+case class Tweet(user: String, text: String, retweets: Int) {
   override def toString: String =
     "User: " + user + "\n" +
     "Text: " + text + " [" + retweets + "]"
-  def getRetweets = this.retweets
 }
 
 /**
@@ -33,15 +32,7 @@ class Tweet(val user: String, val text: String, val retweets: Int) {
  *
  * [1] http://en.wikipedia.org/wiki/Binary_search_tree
  */
-abstract class TweetSet {
-
-  def isEmpty: Boolean
-
-  def getElem: Tweet
-
-  def getLeft: TweetSet
-
-  def getRight: TweetSet
+sealed trait TweetSet {
 
   /**
    * This method takes a predicate and returns a subset of all the elements
@@ -50,12 +41,7 @@ abstract class TweetSet {
    * Question: Can we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def filter(p: Tweet => Boolean): TweetSet
-
-  /**
-   * This is a helper method for `filter` that propagetes the accumulated tweets.
-   */
-  def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet
+  def filter(p: Tweet => Boolean): TweetSet = TS.filter(this)(p)
 
   /**
    * Returns a new `TweetSet` that is the union of `TweetSet`s `this` and `that`.
@@ -63,7 +49,7 @@ abstract class TweetSet {
    * Question: Should we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def union(that: TweetSet): TweetSet
+  def union(that: TweetSet): TweetSet = TS.union(this)(that)
 
   /**
    * Returns the tweet from this set which has the greatest retweet count.
@@ -74,7 +60,7 @@ abstract class TweetSet {
    * Question: Should we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def mostRetweeted: Tweet
+  def mostRetweeted: Tweet = TS.mostRetweeted(this)
 
   /**
    * Returns a list containing all tweets of this set, sorted by retweet count
@@ -85,11 +71,7 @@ abstract class TweetSet {
    * Question: Should we implment this method here, or should it remain abstract
    * and be implemented in the subclasses?
    */
-  def descendingByRetweet: TweetList
-
-  /**
-   * The following methods are already implemented
-   */
+  def descendingByRetweet: TweetList = TS.descendingByRetweet(this)
 
   /**
    * Returns a new `TweetSet` which contains all elements of this set, and the
@@ -97,243 +79,179 @@ abstract class TweetSet {
    *
    * If `this.contains(tweet)`, the current set is returned.
    */
-  def incl(tweet: Tweet): TweetSet
+  def incl(tweet: Tweet): TweetSet = TS.incl(this)(tweet)
 
   /**
    * Returns a new `TweetSet` which excludes `tweet`.
    */
-  def remove(tweet: Tweet): TweetSet
+  def remove(tweet: Tweet): TweetSet = TS.remove(this)(tweet)
 
   /**
    * Tests if `tweet` exists in this `TweetSet`.
    */
-  def contains(tweet: Tweet): Boolean
+  def contains(tweet: Tweet): Boolean = TS.contains(this)(tweet)
 
   /**
    * This method takes a function and applies it to every element in the set.
    */
-  def foreach(f: Tweet => Unit): Unit
+  def foreach(f: Tweet => Unit): Unit = TS.foreach(this)(f)
 }
 
-class Empty extends TweetSet {
+case class Empty() extends TweetSet
 
-  def isEmpty = true
+case class NonEmpty(
+  elem: Tweet,
+  left: TweetSet,
+  right: TweetSet
+) extends TweetSet
 
-  def getElem = throw new java.util.NoSuchElementException()
+object TS {
 
-  def getLeft = throw new java.util.NoSuchElementException()
-
-  def getRight = throw new java.util.NoSuchElementException()
-
-  def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = acc
-
-  /**
-   * The following methods are already implemented
-   */
-
-  def contains(tweet: Tweet): Boolean = false
-
-  def incl(tweet: Tweet): TweetSet = new NonEmpty(tweet, new Empty, new Empty)
-
-  def remove(tweet: Tweet): TweetSet = this
-
-  def foreach(f: Tweet => Unit): Unit = ()
-
-  /**
-    * This method takes a predicate and returns a subset of all the elements
-    * in the original set for which the predicate is true.
-    *
-    * Question: Can we implment this method here, or should it remain abstract
-    * and be implemented in the subclasses?
-    */
-  def filter(p: (Tweet) => Boolean): TweetSet = this
-
-  /**
-    * Returns a new `TweetSet` that is the union of `TweetSet`s `this` and `that`.
-    *
-    * Question: Should we implment this method here, or should it remain abstract
-    * and be implemented in the subclasses?
-    */
-  def union(that: TweetSet): TweetSet = that
-
-  /**
-    * Returns the tweet from this set which has the greatest retweet count.
-    *
-    * Calling `mostRetweeted` on an empty set should throw an exception of
-    * type `java.util.NoSuchElementException`.
-    *
-    * Question: Should we implment this method here, or should it remain abstract
-    * and be implemented in the subclasses?
-    */
-  def mostRetweeted: Tweet = throw new java.util.NoSuchElementException()
-
-  /**
-    * Returns a list containing all tweets of this set, sorted by retweet count
-    * in descending order. In other words, the head of the resulting list should
-    * have the highest retweet count.
-    *
-    * Hint: the method `remove` on TweetSet will be very useful.
-    * Question: Should we implment this method here, or should it remain abstract
-    * and be implemented in the subclasses?
-    */
-  def descendingByRetweet: TweetList = Nil
-}
-
-class NonEmpty(elem: Tweet, left: TweetSet, right: TweetSet) extends TweetSet {
-
-  def isEmpty = false
-
-  def getElem = this.elem
-
-  def getLeft = this.left
-
-  def getRight = this.right
-
-  def filterAcc(p: Tweet => Boolean, acc: TweetSet): TweetSet = acc
-
-  /**
-   * The following methods are already implemented
-   */
-
-  def contains(x: Tweet): Boolean =
-    if (x.text < elem.text) left.contains(x)
-    else if (elem.text < x.text) right.contains(x)
-    else true
-
-  def incl(x: Tweet): TweetSet =
-    if (x.text < elem.text) new NonEmpty(elem, left.incl(x), right)
-    else if (elem.text < x.text) new NonEmpty(elem, left, right.incl(x))
-    else this
-
-  def remove(tw: Tweet): TweetSet =
-    if (tw.text < elem.text) new NonEmpty(elem, left.remove(tw), right)
-    else if (elem.text < tw.text) new NonEmpty(elem, left, right.remove(tw))
-    else left.union(right)
-
-  def foreach(f: Tweet => Unit): Unit = {
-    f(elem)
-    left.foreach(f)
-    right.foreach(f)
-  }
-
-  /**
-    * This method takes a predicate and returns a subset of all the elements
-    * in the original set for which the predicate is true.
-    *
-    * Question: Can we implment this method here, or should it remain abstract
-    * and be implemented in the subclasses?
-    */
-  def filter(p: (Tweet) => Boolean): TweetSet = {
-
-    def helper(acc: TweetSet, rest: TweetSet): TweetSet =
-      if (rest.isEmpty)
-        acc
-      else if (p(rest.getElem))
-        helper(acc.incl(rest.getElem), rest.getLeft.union(rest.getRight))
+  def filter(ts: TweetSet)(p: Tweet => Boolean): TweetSet = ts match {
+    case Empty() =>
+      Empty()
+    case NonEmpty(e, l, r) => {
+      if (p(e))
+        incl(filter(union(l)(r))(p))(e)
       else
-        helper(acc, rest.getLeft.union(rest.getRight))
-
-    helper(new Empty, this)
+        filter(union(l)(r))(p)
+    }
   }
 
-  /**
-    * Returns a new `TweetSet` that is the union of `TweetSet`s `this` and `that`.
-    *
-    * Question: Should we implment this method here, or should it remain abstract
-    * and be implemented in the subclasses?
-    */
-  def union(that: TweetSet): TweetSet =
-    left.union(right).union(that).incl(elem)
+  def union(ts: TweetSet)(ts2: TweetSet): TweetSet = ts match {
+    case Empty() =>
+      ts2
+    case NonEmpty(e, l, r) =>
+      incl(union(union(l)(r))(ts2))(e)
+  }
 
-  /**
-    * Returns the tweet from this set which has the greatest retweet count.
-    *
-    * Calling `mostRetweeted` on an empty set should throw an exception of
-    * type `java.util.NoSuchElementException`.
-    *
-    * Question: Should we implment this method here, or should it remain abstract
-    * and be implemented in the subclasses?
-    */
-  def mostRetweeted: Tweet = {
+  def mostRetweeted(ts: TweetSet): Tweet = ts match {
+    case Empty() => throw new java.util.NoSuchElementException
+    case NonEmpty(e, l, r) => {
 
-    def helper(acc: Tweet, ts: TweetSet): Tweet =
-      if (ts.isEmpty)
-        acc
-      else if (ts.getElem.getRetweets > acc.getRetweets)
-        helper(ts.getElem, ts.getLeft.union(ts.getRight))
+      def helper(acc: Tweet, rest: TweetSet): Tweet = rest match {
+        case Empty() => acc
+        case NonEmpty(e2, l2, r2) =>
+          if (e2.text > acc.text) helper(e2, union(l2)(r2))
+          else helper(acc, union(l2)(r2))
+      }
+
+      helper(e, union(l)(r))
+    }
+  }
+
+  def descendingByRetweet(ts: TweetSet): TweetList = {
+
+    def toList: List[Tweet] = {
+
+      def helper(acc: List[Tweet], rest: TweetSet): List[Tweet] = rest match {
+        case Empty() => acc
+        case NonEmpty(e, l, r) => helper(e :: acc, union(l)(r))
+      }
+
+      helper(List(), ts)
+    }
+
+    def toTweetList(lt: List[Tweet]): TweetList = {
+
+      def helper(acc: TweetList, rest: List[Tweet]): TweetList = rest match {
+        case List() => acc
+        case (h :: t) => helper(Cons(h, acc), t)
+      }
+
+      helper(Nil, lt)
+    }
+
+    toTweetList(toList.sortBy(_.retweets))
+  }
+
+  def incl(ts: TweetSet)(t: Tweet): TweetSet = ts match {
+    case Empty() =>
+      NonEmpty(t, Empty(), Empty())
+    case NonEmpty(e, l, r) => {
+      if (t.text < e.text)
+        NonEmpty(e, incl(l)(t), r)
+      else if (t.text > e.text)
+        NonEmpty(e, l, incl(r)(t))
       else
-        helper(acc, ts.getLeft.union(ts.getRight))
-
-    helper(elem, left.union(right))
+        ts
+    }
   }
 
-  /**
-    * Returns a list containing all tweets of this set, sorted by retweet count
-    * in descending order. In other words, the head of the resulting list should
-    * have the highest retweet count.
-    *
-    * Hint: the method `remove` on TweetSet will be very useful.
-    * Question: Should we implment this method here, or should it remain abstract
-    * and be implemented in the subclasses?
-    */
-  def descendingByRetweet: TweetList = {
-
-    def tweetSetToList(ts: TweetSet): List[Tweet] = {
-
-      def helper(acc: List[Tweet], rest: TweetSet): List[Tweet] =
-        if (rest.isEmpty)
-          acc
-        else
-          helper(rest.getElem :: acc, rest.getLeft.union(rest.getRight))
-
-      helper(List(), this)
+  def remove(ts: TweetSet)(t: Tweet): TweetSet = ts match {
+    case Empty() =>
+      Empty()
+    case NonEmpty(e, l, r) => {
+      if (t.text < e.text)
+        NonEmpty(e, remove(l)(t), r)
+      else if (t.text > e.text)
+        NonEmpty(e, l, remove(r)(t))
+      else
+        union(l)(r)
     }
+  }
 
-    def listToTweetList(ts: List[Tweet]): TweetList = {
+  def contains(ts: TweetSet)(t: Tweet): Boolean = ts match {
+    case Empty() =>
+      false
+    case NonEmpty(e, l, r) =>
+      t == e || contains(union(l)(r))(t)
+  }
 
-      def helper(acc: TweetList, rest: List[Tweet]): TweetList =
-        if (rest.isEmpty)
-          acc
-        else
-          helper(acc.push(rest.head), rest.tail)
-
-      helper(Nil, ts)
+  def foreach(ts: TweetSet)(f: Tweet => Unit): Unit = ts match {
+    case Empty() =>
+      ()
+    case NonEmpty(e, l, r) => {
+      f(e)
+      foreach(union(l)(r))(f)
     }
-
-    listToTweetList(tweetSetToList(this).sortBy(_.retweets))
   }
 }
 
-trait TweetList {
-  def push(t: Tweet): TweetList
-  def head: Tweet
-  def tail: TweetList
-  def isEmpty: Boolean
-  def foreach(f: Tweet => Unit): Unit =
-    if (!isEmpty) {
-      f(head)
-      tail.foreach(f)
-    }
+sealed trait TweetList {
+  def push(t: Tweet): TweetList = TL.push(this)(t)
+  def head: Tweet = TL.head(this)
+  def tail: TweetList = TL.tail(this)
+  def isEmpty: Boolean = TL.isEmpty(this)
+  def foreach(f: Tweet => Unit): Unit = TL.foreach(this)(f)
 }
 
-object Nil extends TweetList {
-  def push(t: Tweet): TweetList = new Cons(t, Nil)
-  def head = throw new java.util.NoSuchElementException("head of EmptyList")
-  def tail = throw new java.util.NoSuchElementException("tail of EmptyList")
-  def isEmpty = true
-}
+case object Nil extends TweetList
 
-class Cons(val head: Tweet, val tail: TweetList) extends TweetList {
-  def push(t: Tweet): TweetList = new Cons(t, this)
-  def isEmpty = false
+case class Cons(elem: Tweet, rest: TweetList) extends TweetList
+
+object TL {
+
+  def push(tl: TweetList)(t: Tweet): TweetList = tl match {
+    case Nil => Cons(t, Nil)
+    case _ => Cons(t, tl)
+  }
+
+  def head(tl: TweetList): Tweet = tl match {
+    case Nil => throw new java.util.NoSuchElementException
+    case Cons(e, _) => e
+  }
+
+  def tail(tl: TweetList): TweetList = tl match {
+    case Nil => throw new java.util.NoSuchElementException
+    case Cons(_, r) => r
+  }
+
+  def isEmpty(tl: TweetList): Boolean = tl match {
+    case Nil => true
+    case _ => false
+  }
+
+  def foreach(tl: TweetList)(f: Tweet => Unit): Unit = tl match {
+    case Nil =>
+    case Cons(e, r) => f(e); foreach(r)(f)
+  }
 }
 
 object GoogleVsApple {
 
   val google = List("android", "Android", "galaxy", "Galaxy", "nexus", "Nexus")
   val apple = List("ios", "iOS", "iphone", "iPhone", "ipad", "iPad")
-
-  lazy val allTweets: TweetSet = TweetReader.allTweets
 
   lazy val googleTweets: TweetSet =
     google
