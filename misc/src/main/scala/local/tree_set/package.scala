@@ -65,7 +65,10 @@ package object tree_set {
         insert(union(union(l, r), ts2), t)
     }
 
-  def intersection[A: Comparable](ts1: TreeSet[A], ts2: TreeSet[A]): TreeSet[A] =
+  def intersection[A: Comparable](
+    ts1: TreeSet[A],
+    ts2: TreeSet[A]
+  ): TreeSet[A] =
     ts1 match {
       case Leaf =>
         Leaf
