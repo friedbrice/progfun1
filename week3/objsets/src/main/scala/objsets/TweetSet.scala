@@ -112,8 +112,10 @@ object TS {
       Empty()
     case NonEmpty(e, l, r) => {
       if (p(e))
+        // TODO: Remove union from this call
         incl(filter(union(l)(r))(p))(e)
       else
+        // TODO: Remove union from this call
         filter(union(l)(r))(p)
     }
   }
@@ -122,6 +124,7 @@ object TS {
     case Empty() =>
       ts2
     case NonEmpty(e, l, r) =>
+      // TODO: is there a faster implementation?
       incl(union(union(l)(r))(ts2))(e)
   }
 
@@ -132,10 +135,15 @@ object TS {
       def helper(acc: Tweet, rest: TweetSet): Tweet = rest match {
         case Empty() => acc
         case NonEmpty(e2, l2, r2) =>
-          if (e2.text > acc.text) helper(e2, union(l2)(r2))
-          else helper(acc, union(l2)(r2))
+          if (e2.text > acc.text)
+            // TODO: remove union
+            helper(e2, union(l2)(r2))
+          else
+            // TODO: remove union
+            helper(acc, union(l2)(r2))
       }
 
+      // TODO: remove union
       helper(e, union(l)(r))
     }
   }
@@ -145,8 +153,11 @@ object TS {
     def toList: List[Tweet] = {
 
       def helper(acc: List[Tweet], rest: TweetSet): List[Tweet] = rest match {
-        case Empty() => acc
-        case NonEmpty(e, l, r) => helper(e :: acc, union(l)(r))
+        case Empty() =>
+          acc
+        case NonEmpty(e, l, r) =>
+          // TODO: remove union
+          helper(e :: acc, union(l)(r))
       }
 
       helper(List(), ts)
@@ -155,8 +166,10 @@ object TS {
     def toTweetList(lt: List[Tweet]): TweetList = {
 
       def helper(acc: TweetList, rest: List[Tweet]): TweetList = rest match {
-        case List() => acc
-        case (h :: t) => helper(Cons(h, acc), t)
+        case List() =>
+          acc
+        case (h :: t) =>
+          helper(Cons(h, acc), t)
       }
 
       helper(Nil, lt)
@@ -187,6 +200,7 @@ object TS {
       else if (t.text > e.text)
         NonEmpty(e, l, remove(r)(t))
       else
+        // TODO: remove union here
         union(l)(r)
     }
   }
@@ -195,6 +209,7 @@ object TS {
     case Empty() =>
       false
     case NonEmpty(e, l, r) =>
+      // TODO: remove union
       t == e || contains(union(l)(r))(t)
   }
 
@@ -203,13 +218,14 @@ object TS {
       ()
     case NonEmpty(e, l, r) => {
       f(e)
+      // TODO: remove union
       foreach(union(l)(r))(f)
     }
   }
 }
 
 sealed trait TweetList {
-  def push(t: Tweet): TweetList = TL.push(this)(t)
+  def incl(t: Tweet): TweetList = TL.incl(this)(t)
   def head: Tweet = TL.head(this)
   def tail: TweetList = TL.tail(this)
   def isEmpty: Boolean = TL.isEmpty(this)
@@ -222,7 +238,7 @@ case class Cons(elem: Tweet, rest: TweetList) extends TweetList
 
 object TL {
 
-  def push(tl: TweetList)(t: Tweet): TweetList = tl match {
+  def incl(tl: TweetList)(t: Tweet): TweetList = tl match {
     case Nil => Cons(t, Nil)
     case _ => Cons(t, tl)
   }
@@ -257,16 +273,16 @@ object GoogleVsApple {
     google
       .map(term => allTweets.filter(tweet => tweet.text.contains(term)))
       .reduce(_.union(_))
-
-  lazy val appleTweets: TweetSet =
-    apple
-      .map(term => allTweets.filter(tweet => tweet.text.contains(term)))
-      .reduce(_.union(_))
   
   /**
    * A list of all tweets mentioning a keyword from either apple or google,
    * sorted by the number of retweets.
    */
+  lazy val appleTweets: TweetSet =
+    apple
+      .map(term => allTweets.filter(tweet => tweet.text.contains(term)))
+      .reduce(_.union(_))
+
   lazy val trending: TweetList =
     googleTweets.union(appleTweets).descendingByRetweet
 }
