@@ -104,14 +104,10 @@ object GoogleVsApple {
   val apple = List("ios", "iOS", "iphone", "iPhone", "ipad", "iPad")
 
   lazy val googleTweets: TweetSet =
-    google
-      .map(term => allTweets.filter(tweet => tweet.text.contains(term)))
-      .reduce(_.union(_))
-  
+    allTweets.filter(tweet => google.exists(term => tweet.text.contains(term)))
+
   lazy val appleTweets: TweetSet =
-    apple
-      .map(term => allTweets.filter(tweet => tweet.text.contains(term)))
-      .reduce(_.union(_))
+    allTweets.filter(tweet => apple.exists(term => tweet.text.contains(term)))
 
   lazy val trending: TweetList =
     googleTweets.union(appleTweets).descendingByRetweet
