@@ -19,18 +19,19 @@ package object patmat {
   sealed trait CodeTree
 
   case class Fork(
-                   left: CodeTree,
-                   right: CodeTree,
-                   chars: List[Char],
-                   weight: Int
-                 ) extends CodeTree
+    left: CodeTree,
+    right: CodeTree,
+    chars: List[Char],
+    weight: Int
+  ) extends CodeTree
 
   case class Leaf(
-                   char: Char,
-                   weight: Int
-                 ) extends CodeTree
+    char: Char,
+    weight: Int
+  ) extends CodeTree
 
   // Part 1: Basics
+
   def weight(tree: CodeTree): Int = tree match {
     case Fork(_, _, _, w) => w
     case Leaf(_, w) => w
@@ -41,7 +42,7 @@ package object patmat {
     case Leaf(c, _) => List(c)
   }
 
-  def makeCodeTree(left: CodeTree, right: CodeTree) = Fork(
+  def makeCodeTree(left: CodeTree, right: CodeTree): Fork = Fork(
     left = left,
     right = right,
     chars = chars(left) ::: chars(right),
@@ -94,7 +95,12 @@ package object patmat {
     *
     * .
     */
-  def times(chars: List[Char]): List[(Char, Int)] = ???
+  def times(chars: List[Char]): List[(Char, Int)] =
+    chars
+      .foldLeft(Map[Char, Int]())(
+        (acc, c) => acc.updated(c, acc.getOrElse(c,0) + 1)
+      )
+      .toList
 
   /**
     * Returns a list of `Leaf` nodes for a given frequency table `freqs`.
@@ -103,12 +109,18 @@ package object patmat {
     * head of the list should have the smallest weight), where the weight
     * of a leaf is the frequency of the character.
     */
-  def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] = ???
+  def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] =
+    freqs
+      .sortBy({case (c, w) => w})
+      .map({case (c, w) => Leaf(c, w)})
 
   /**
     * Checks whether the list `trees` contains only one single code tree.
     */
-  def singleton(trees: List[CodeTree]): Boolean = ???
+  def singleton(trees: List[CodeTree]): Boolean = trees match {
+    case _ :: Nil => true
+    case _ => false
+  }
 
   /**
     * The parameter `trees` of this function is a list of code trees ordered by
@@ -122,7 +134,18 @@ package object patmat {
     * If `trees` is a list of less than two elements, that list should be
     * returned unchanged.
     */
-  def combine(trees: List[CodeTree]): List[CodeTree] = ???
+  def combine(trees: List[CodeTree]): List[CodeTree] = trees match {
+
+    case tree1 :: tree2 :: rest =>
+      val combined = makeCodeTree(tree1, tree2)
+      val (left, right) = rest.span({
+        case Leaf(_, w) => w < combined.weight
+        case Fork(_, _, _, w) => w < combined.weight
+      })
+      left ::: combined :: right
+
+    case _ => trees
+  }
 
   /**
     * This function will be called in the following way:
@@ -137,14 +160,15 @@ package object patmat {
     * singleton list.
     *
     * Hint: before writing the implementation,
-    *  - start by defining the parameter types such that the above example
-    *    invocation is valid.
-    *    The parameter types of `until` should match the argument types of the
-    *    example invocation.
-    *    Also define the return type of the `until` function.
-    *  - try to find sensible parameter names for `xxx`, `yyy` and `zzz`.
+    * - start by defining the parameter types such that the above example
+    *   invocation is valid.
+    *   The parameter types of `until` should match the argument types of the
+    *   example invocation.
+    *   Also define the return type of the `until` function.
+    * - try to find sensible parameter names for `xxx`, `yyy` and `zzz`.
     */
-  def until(xxx: ???, yyy: ???)(zzz: ???): ??? = ???
+  def until[A](p: A => Boolean, f: A => A)(x: A): A =
+    if (p(x)) x else until(p, f)(f(x))
 
   /**
     * This function creates a code tree which is optimal to encode the text
@@ -154,7 +178,8 @@ package object patmat {
     * character frequencies from that text and creates a code tree based on
     * them.
     */
-  def createCodeTree(chars: List[Char]): CodeTree = ???
+  def createCodeTree(chars: List[Char]): CodeTree =
+    until(singleton, combine)(makeOrderedLeafList(times(chars))).head
 
   // Part 3: Decoding
 
@@ -164,7 +189,18 @@ package object patmat {
     * This function decodes the bit sequence `bits` using the code tree `tree`
     * and returns the resulting list of characters.
     */
-  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = ???
+  def decode(tree: CodeTree, bits: List[Bit]): List[Char] = {
+
+    def helper(
+      subtree: CodeTree,
+      acc: List[Char],
+      rest: List[Bit]
+    ): List[Char] = {
+      ???
+    }
+
+    helper(tree, List(), bits)
+  }
 
   /**
     * Write a function that returns the decoded secret
