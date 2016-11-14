@@ -195,17 +195,20 @@ package object patmat {
       subtree: CodeTree,
       acc: List[Char],
       rest: List[Bit]
-    ): List[Char] = {
-      ???
+    ): List[Char] = subtree match {
+      case Leaf(char, _) => helper(tree, char :: acc, rest)
+      case Fork(left, right, _, _) => rest match {
+        case Nil =>
+          acc
+        case 0 :: nextRest =>
+          helper(left, acc, nextRest)
+        case 1 :: nextRest =>
+          helper(right, acc, nextRest)
+      }
     }
 
-    helper(tree, List(), bits)
+    helper(tree, List(), bits).reverse
   }
-
-  /**
-    * Write a function that returns the decoded secret
-    */
-  def decodedSecret: List[Char] = ???
 
   // Part 4a: Encoding using Huffman tree
 
