@@ -43,4 +43,22 @@ class HuffmanSuite extends FunSuite {
       assert(decode(t1, encode(t1)("ab".toList)) === "ab".toList)
     }
   }
+
+  test("decode and encode a longer message should be identity") {
+    val tree: CodeTree = HuffmanData.frenchCode
+    val chars: List[Char] = "allthesmallthings".toList
+    assert(decode(tree, encode(tree)(chars)) === chars)
+  }
+
+  test("decode and encode a longer longer message should be identity") {
+    val tree: CodeTree = HuffmanData.frenchCode
+    val chars: List[Char] = "thequickbrownfoxjumpsoverthelazydog".toList
+    assert(decode(tree, encode(tree)(chars)) === chars)
+  }
+
+  test("decode and quickEncode should be inverses") {
+    val tree: CodeTree = HuffmanData.frenchCode
+    val chars: List[Char] = "thequickbrownfoxjumpsoverthelazydog".toList
+    assert(decode(tree, quickEncode(tree)(chars)) === chars)
+  }
 }

@@ -135,7 +135,6 @@ package object patmat {
     * returned unchanged.
     */
   def combine(trees: List[CodeTree]): List[CodeTree] = trees match {
-
     case tree1 :: tree2 :: rest =>
       val combined = makeCodeTree(tree1, tree2)
       val (left, right) = rest.span({
@@ -143,7 +142,6 @@ package object patmat {
         case Fork(_, _, _, w) => w < combined.weight
       })
       left ::: combined :: right
-
     case _ => trees
   }
 
@@ -198,25 +196,48 @@ package object patmat {
     ): List[Char] = subtree match {
       case Leaf(char, _) => helper(tree, char :: acc, rest)
       case Fork(left, right, _, _) => rest match {
-        case Nil =>
-          acc
-        case 0 :: nextRest =>
-          helper(left, acc, nextRest)
-        case 1 :: nextRest =>
-          helper(right, acc, nextRest)
+        case Nil => acc
+        case 0 :: nextRest => helper(left, acc, nextRest)
+        case 1 :: nextRest => helper(right, acc, nextRest)
       }
     }
-
-    helper(tree, List(), bits).reverse
+    helper(tree, Nil, bits).reverse
   }
 
   // Part 4a: Encoding using Huffman tree
+
+  def charToBits(tree: CodeTree)(char: Char): List[Bit] = {
+
+    def helper(acc: List[Bit], rest: CodeTree): List[Bit] = {
+
+      rest match {
+        case Leaf(_, _) => acc
+        case Fork(l, r, _, _) => {
+
+          def getChars(tree: CodeTree): List[Char] = tree match {
+            case Fork(_, _, cs, _) => cs
+            case Leaf(c, _) => List(c)
+          }
+
+          if (getChars(l).contains(char))
+            helper(0 :: acc, l)
+          else if (getChars(r).contains(char))
+            helper(1 :: acc, r)
+          else
+            Nil
+        }
+      }
+    }
+
+    helper(List(), tree).reverse
+  }
 
   /**
     * This function encodes `text` using the code tree `tree` into a sequence of
     * bits.
     */
-  def encode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
+  def encode(tree: CodeTree)(text: List[Char]): List[Bit] =
+    text.flatMap(charToBits(tree))
 
   // Part 4b: Encoding using code table
 
@@ -226,7 +247,8 @@ package object patmat {
     * This function returns the bit sequence that represents the character
     * `char` in the code table `table`.
     */
-  def codeBits(table: CodeTable)(char: Char): List[Bit] = ???
+  def codeBits(table: CodeTable)(char: Char): List[Bit] =
+    table.toMap.apply(char)
 
   /**
     * Given a code tree, create a code table which contains, for every character
@@ -238,7 +260,8 @@ package object patmat {
     * Using the code tables of the sub-trees, think of how to build the code
     * table for the entire tree.
     */
-  def convert(tree: CodeTree): CodeTable = ???
+  def convert(tree: CodeTree): CodeTable =
+    'a'.to('z').map(c => (c, charToBits(tree)(c))).toList
 
   /**
     * This function takes two code tables and merges them into one.
@@ -246,7 +269,7 @@ package object patmat {
     * method might also do some transformations on the two parameter code
     * tables.
     */
-  def mergeCodeTables(a: CodeTable, b: CodeTable): CodeTable = ???
+  def mergeCodeTables(a: CodeTable, b: CodeTable): CodeTable = a ++ b
 
   /**
     * This function encodes `text` according to the code tree `tree`.
@@ -254,5 +277,6 @@ package object patmat {
     * To speed up the encoding process, it first converts the code tree to a
     * code table and then uses it to perform the actual encoding.
     */
-  def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] = ???
+  def quickEncode(tree: CodeTree)(text: List[Char]): List[Bit] =
+    text.flatMap(codeBits(convert(tree)))
 }
