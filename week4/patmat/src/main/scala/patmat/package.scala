@@ -33,12 +33,14 @@ package object patmat {
 
   def string2Chars(str: String): List[Char] = str.toList
 
-  def times(chars: List[Char]): List[(Char, Int)] =
+  def times(chars: List[Char]): List[(Char, Int)] = {
+    val init = ' '.to('~').map(c => (c, 0)).toMap[Char, Int]
     chars
-      .foldLeft(Map[Char, Int]())(
-        (acc, c) => acc.updated(c, acc.getOrElse(c,0) + 1)
+      .foldLeft(init)(
+        (acc, c) => acc.updated(c, acc.getOrElse(c, 0) + 1)
       )
       .toList
+  }
 
   def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] =
     freqs
