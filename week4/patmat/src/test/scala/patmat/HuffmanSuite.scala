@@ -243,4 +243,57 @@ class HuffmanSuite extends FunSuite {
     assert(dec2B === msg2)
     assert(dec2C === msg2)
   }
+
+  test("same as above, but with quickEncode") {
+    // given
+    val msg1 =
+      """
+        |Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod
+        |tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+        |veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea
+        |commodo consequat. Duis aute irure dolor in reprehenderit in voluptate
+        |velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint
+        |occaecat cupidatat non proident, sunt in culpa qui officia deserunt
+        |mollit anim id est laborum.
+        |""".stripMargin.toList
+    val msg2 =
+      """
+        |Sed ut perspiciatis, unde omnis iste natus error sit voluptatem
+        |accusantium doloremque laudantium, totam rem aperiam eaque ipsa, quae
+        |ab illo inventore veritatis et quasi architecto beatae vitae dicta
+        |sunt, explicabo. Nemo enim ipsam voluptatem, quia voluptas sit,
+        |aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos,
+        |qui ratione voluptatem sequi nesciunt, neque porro quisquam est, qui
+        |dolorem ipsum, quia dolor sit amet consectetur adipiscing velit, sed
+        |quia non numquam do eius modi tempora incididunt, ut labore et dolore
+        |magnam aliquam quaerat voluptatem. Ut enim ad minima veniam, quis
+        |nostrum exercitationem ullam corporis suscipit laboriosam, nisi ut
+        |aliquid ex ea commodi consequatur. Quis autem vel eum iure
+        |reprehenderit, qui in ea voluptate velit esse, quam nihil molestiae
+        |consequatur, vel illum, qui dolorem eum fugiat, quo voluptas nulla
+        |pariatur.
+        |""".stripMargin.toList
+
+    // when
+    val treeA = createCodeTree(msg1)
+    val treeB = createCodeTree(msg2)
+    val treeC = createCodeTree(msg1 ++ msg2)
+    val qEncoderA = quickEncode(treeA)(_)
+    val qEncoderB = quickEncode(treeB)(_)
+    val qEncoderC = quickEncode(treeC)(_)
+    val enc1A = qEncoderA(msg1)
+    val enc1C = qEncoderC(msg1)
+    val enc2B = qEncoderB(msg2)
+    val enc2C = qEncoderC(msg2)
+    val dec1A = decode(treeA, enc1A)
+    val dec1C = decode(treeC, enc1C)
+    val dec2B = decode(treeB, enc2B)
+    val dec2C = decode(treeC, enc2C)
+
+    // then
+    assert(dec1A === msg1)
+    assert(dec1C === msg1)
+    assert(dec2B === msg2)
+    assert(dec2C === msg2)
+  }
 }

@@ -33,14 +33,12 @@ package object patmat {
 
   def string2Chars(str: String): List[Char] = str.toList
 
-  def times(chars: List[Char]): List[(Char, Int)] = {
-    val init = ' '.to('~').map(c => (c, 0)).toMap[Char, Int]
+  def times(chars: List[Char]): List[(Char, Int)] =
     chars
-      .foldLeft(init)(
+      .foldLeft(Map[Char, Int]())(
         (acc, c) => acc.updated(c, acc.getOrElse(c, 0) + 1)
       )
       .toList
-  }
 
   def makeOrderedLeafList(freqs: List[(Char, Int)]): List[Leaf] =
     freqs
@@ -122,8 +120,15 @@ package object patmat {
   def codeBits(table: CodeTable)(char: Char): List[Bit] =
     table.toMap.apply(char)
 
-  def convert(tree: CodeTree): CodeTable =
-    'a'.to('z').map(c => (c, charToBits(tree)(c))).toList
+  def convert(tree: CodeTree): CodeTable = {
+
+    def helper(acc: CodeTable, rest: CodeTree): CodeTable = rest match {
+      case Leaf(c, _) => (c, charToBits(tree)(c)) :: acc
+      case Fork(l, r, _, _) => helper(acc, l) ++ helper(acc, r)
+    }
+
+    helper(List(), tree)
+  }
 
   def mergeCodeTables(a: CodeTable, b: CodeTable): CodeTable = a ++ b
 
