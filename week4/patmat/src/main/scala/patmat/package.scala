@@ -1,6 +1,6 @@
 package object patmat {
 
-  sealed trait CodeTree
+  abstract class CodeTree
 
   case class Fork(
     left: CodeTree,
